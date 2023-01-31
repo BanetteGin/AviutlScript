@@ -17,7 +17,7 @@ function strsplit(str, ts)
   local itr = 1
   for s in string.gmatch(str, "([^"..ts.."]+)") do
     if not tonumber(s) then
-        print("number error")
+        print("Number Error")
         return
     end 
     t[itr] = tonumber(s)
@@ -29,15 +29,15 @@ end
 function colorread(str)
     local rdline = strsplit(str," ")
     if #rdline ~= 4 then
-        print("line error 2")
+        print("Line Error")
         return
     end
     if rdline[1] >= 256 or rdline[2] >= 256 or rdline[3] >= 256 then
-        print("rgb error")
+        print("RGB Error")
         return
     end
     if rdline[4] > 100 then
-        print("alpha error")
+        print("Alpha Error")
         return
     end
     local rtrgb = rdline[1]*65536+rdline[2]*256+rdline[3]
@@ -52,7 +52,7 @@ local splen=obj.track2
 local sptim=obj.track3
 local tim,ttim=obj.time,obj.totaltime
 if sptim == 0 then
-    print("0desuyo")
+    print("Invaild value")
     return
 end
 
@@ -69,7 +69,7 @@ for line in fileop:lines() do
 end
 fileop:close()
 if #input < 4 then
-    print("The specified file is invalid. :line < 2")
+    print("The specified file is invalid.")
     return
 end
 
@@ -79,7 +79,7 @@ local lifergb,lifealp=colorread(input[3])
 
 local firline = strsplit(input[1]," ")
 if #firline ~= 2 then
-    print("line error 1")
+    print("Line Error")
     return
 end
 local mpw,mph=firline[1],firline[2]
@@ -93,7 +93,7 @@ if history == nil or checksptim == nil or checkttim == nil or checkh == nil or c
 
     local inpw,inph = string.len(input[4]),#input-3
     if inpw > mpw or inph > mph then
-        print("size error")
+        print("Size Error")
         return 
     end
     local state={}
@@ -167,7 +167,7 @@ for ity=1, mph do
             obj.load("figure","四角形",lifergb,sqre,width)
             obj.draw((itx-0.5)*sqre-mpw/2*(sqre+splen)+(itx-1)*splen,(ity-0.5)*sqre-mph/2*(sqre+splen)+(ity-1)*splen,0,1,lifealp)
         else
-            print("character error")
+            print("Character Error")
         end
     end
 end
