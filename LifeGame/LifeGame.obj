@@ -58,7 +58,7 @@ end
 
 --1.ファイル読み込み部
 --ファイル入力受け取り
-if file ==nil or file == "" then
+if file == nil or file == "" then
     print("The specified file is empty.")
     return
 end
