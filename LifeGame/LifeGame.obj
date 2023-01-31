@@ -68,7 +68,7 @@ for line in fileop:lines() do
     input[#input+1] = line
 end
 fileop:close()
-if #input < 2 then
+if #input < 4 then
     print("The specified file is invalid. :line < 2")
     return
 end
