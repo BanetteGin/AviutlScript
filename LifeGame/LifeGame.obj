@@ -1,0 +1,175 @@
+--track0:サイズ,0,4000,100,1
+--track1:ライン幅,0,4000,4000,1
+--track2:間隔,0,1000,0,1
+--track3:速度[s],0,1000,1,0.1
+--file:
+
+--関数実装部分
+function safe_copybuffer(dst,src)
+    if not obj.copybuffer(dst,src)then
+        error(("Failed obj.copybuffer (%s <- %s)"):format(dst,src),2)
+    end
+end
+
+function strsplit(str, ts)
+  if ts == nil then return {} end
+  local t = {} 
+  local itr = 1
+  for s in string.gmatch(str, "([^"..ts.."]+)") do
+    if not tonumber(s) then
+        print("number error")
+        return
+    end 
+    t[itr] = tonumber(s)
+    itr = itr + 1
+  end
+  return t
+end
+
+function colorread(str)
+    local rdline = strsplit(str," ")
+    if #rdline ~= 4 then
+        print("line error 2")
+        return
+    end
+    if rdline[1] >= 256 or rdline[2] >= 256 or rdline[3] >= 256 then
+        print("rgb error")
+        return
+    end
+    if rdline[4] > 100 then
+        print("alpha error")
+        return
+    end
+    local rtrgb = rdline[1]*65536+rdline[2]*256+rdline[3]
+    local rtalp = rdline[4]/100
+    return rtrgb,rtalp
+end
+
+--値取得
+local sqre=obj.track0
+local width=obj.track1
+local splen=obj.track2
+local sptim=obj.track3
+local tim,ttim=obj.time,obj.totaltime
+if sptim == 0 then
+    print("0desuyo")
+    return
+end
+
+--1.ファイル読み込み部
+--ファイル入力受け取り
+if file ==nil or file == "" then
+    print("The specified file is empty.")
+    return
+end
+local fileop = io.open(file,"r")
+local input = {}
+for line in fileop:lines() do
+    input[#input+1] = line
+end
+fileop:close()
+if #input < 2 then
+    print("The specified file is invalid. :line < 2")
+    return
+end
+
+--ファイルの値読み込み
+local deadrgb,deadalp=colorread(input[2])
+local lifergb,lifealp=colorread(input[3])
+
+local firline = strsplit(input[1]," ")
+if #firline ~= 2 then
+    print("line error 1")
+    return
+end
+local mpw,mph=firline[1],firline[2]
+
+--2.ライフゲームの状態初期化
+if history == nil or checksptim == nil or checkttim == nil or checkh == nil or checkw == nil or sptim ~= checksptim or ttim ~= checkttim or checkh ~= mph or checkw ~= mpw then
+    checksptim = sptim
+    checkttim = ttim
+    checkh = mph
+    checkw = mpw
+
+    local inpw,inph = string.len(input[4]),#input-3
+    if inpw > mpw or inph > mph then
+        print("size error")
+        return 
+    end
+    local state={}
+    for ity=1, mph do
+        state[ity]={}
+        for itx=1, mpw do
+            state[ity][itx]='.'
+        end
+    end
+    local bgx=math.floor((mpw-inpw)/2)
+    local bgy=math.floor((mph-inph)/2)
+    for ity=1, inph do
+        for itx=1, inpw do
+            state[bgy+ity][bgx+itx]=string.sub(input[ity+3],itx,itx)
+        end
+    end
+    history={}
+    for span=1, math.ceil(ttim/sptim) do
+        history[span]={}
+        for ity=1, mph do
+            history[span][ity]={}
+            for itx=1, mpw do
+                history[span][ity][itx]=state[ity][itx]
+            end
+        end
+        local tmpstate={}
+        for ity=1, mph do
+            tmpstate[ity]={}
+            for itx=1, mpw do
+                tmpstate[ity][itx]=state[ity][itx]
+            end
+        end
+        local dx={0,1,1,1,0,-1,-1,-1}
+        local dy={-1,-1,0,1,1,1,0,-1}
+        for ity=1, mph do
+            for itx=1, mpw do
+                local hwmnb = 0
+                for ind=1, 8 do
+                    local nx=itx+dx[ind]
+                    local ny=ity+dy[ind]
+                    if (nx <= 0 or nx > mpw) or (ny <= 0 or ny > mph) then
+                        goto continue
+                    end
+                    if tmpstate[ny][nx]=='#' then
+                        hwmnb = hwmnb+1
+                    end
+                    ::continue::
+                end
+                if tmpstate[ity][itx] == '.' and hwmnb == 3 then
+                    state[ity][itx]='#'
+                end
+                if tmpstate[ity][itx] == '#' and (hwmnb <= 1 or hwmnb >= 4) then
+                    state[ity][itx]='.'
+                end
+            end
+        end
+    end
+end
+
+--3.表示
+local sw,sh=obj.screen_w,obj.screen_h
+obj.setoption("dst","tmp",sw,sh)
+
+local nth=math.floor(tim/sptim)+1
+for ity=1, mph do
+    for itx=1, mpw do
+        if history[nth][ity][itx]=='.' then
+            obj.load("figure","四角形",deadrgb,sqre,width)
+            obj.draw((itx-0.5)*sqre-mpw/2*(sqre+splen)+(itx-1)*splen,(ity-0.5)*sqre-mph/2*(sqre+splen)+(ity-1)*splen,0,1,deadalp)
+        elseif history[nth][ity][itx]=='#' then
+            obj.load("figure","四角形",lifergb,sqre,width)
+            obj.draw((itx-0.5)*sqre-mpw/2*(sqre+splen)+(itx-1)*splen,(ity-0.5)*sqre-mph/2*(sqre+splen)+(ity-1)*splen,0,1,lifealp)
+        else
+            print("character error")
+        end
+    end
+end
+safe_copybuffer("obj","tmp")
+obj.draw()
